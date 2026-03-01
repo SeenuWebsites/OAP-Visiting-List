@@ -1,0 +1,36 @@
+# Environment & Secrets
+.env
+.env.local
+.env.production
+config.local.js
+secrets.js
+
+# OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Node (if ever added)
+node_modules/
+npm-debug.log*
+
+# Build output
+dist/
+build/
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# APK files (store via Supabase Storage, not in repo)
+*.apk
+*.aab

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="OAP House Visiting List — Manage OAP house visits, track customer status, commission, and more.">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="OAP Visit">
+    <title>OAP House Visiting List</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="icon" href="icons/icon-192.png" type="image/png">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Theme Toggle (top-right) -->
+    <div style="position:fixed;top:1rem;right:1rem;z-index:999;display:flex;align-items:center;gap:0.5rem;">
+        <span style="font-size:0.8rem;color:var(--text-secondary)" id="themeLabel">☀️</span>
+        <button class="theme-toggle" id="themeToggle" title="Toggle Dark/Light Mode" aria-label="Toggle theme"></button>
+    </div>
+
+    <!-- LANDING / AUTH SECTION -->
+    <section class="landing" id="landingSection">
+        <div class="landing-card animate-slide-up">
+            <!-- Logo -->
+            <div class="landing-logo">🏠</div>
+            <h1>OAP House Visiting List</h1>
+            <p class="subtitle">Manage visits, track status, calculate commission — all in one place.</p>
+
+            <!-- Auth Tabs -->
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tabLogin" onclick="showTab('login')">Login</button>
+                <button class="auth-tab" id="tabSignup" onclick="showTab('signup')">Sign Up</button>
+                <button class="auth-tab" id="tabForgot" onclick="showTab('forgot')">Forgot</button>
+            </div>
+
+            <!-- ===== LOGIN FORM ===== -->
+            <form id="loginForm" class="flex flex-col gap-2" autocomplete="on">
+                <div class="form-group">
+                    <label for="loginEmail">Email <span class="required">*</span></label>
+                    <input type="email" id="loginEmail" class="form-control" placeholder="you@gmail.com" required autocomplete="email">
+                    <span class="error-msg hidden" id="loginEmailErr"></span>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password <span class="required">*</span></label>
+                    <div style="position:relative">
+                        <input type="password" id="loginPassword" class="form-control" placeholder="Enter password" required autocomplete="current-password" style="padding-right:2.5rem">
+                        <button type="button" onclick="togglePass('loginPassword','eyeLogin')" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-secondary);font-size:1.1rem" id="eyeLogin">👁</button>
+                    </div>
+                    <span class="error-msg hidden" id="loginPassErr"></span>
+                </div>
+                <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.875rem;cursor:pointer;color:var(--text-secondary)">
+                    <input type="checkbox" id="keepLoggedIn" checked style="width:16px;height:16px;accent-color:var(--primary)">
+                    Keep me logged in
+                </label>
+                <div class="error-msg hidden" id="loginGeneralErr" style="text-align:center;justify-content:center;padding:0.5rem;background:rgba(239,68,68,0.08);border-radius:6px"></div>
+                <button type="submit" class="btn btn-primary btn-lg w-full" id="loginBtn">
+                    <span id="loginBtnText">Login</span>
+                    <span id="loginSpinner" class="spinner spinner-sm hidden"></span>
+                </button>
+                <div class="divider">or</div>
+                <button type="button" class="btn btn-secondary w-full" onclick="showAdminLogin()">🔐 Admin Login</button>
+            </form>
+
+            <!-- ===== SIGNUP FORM ===== -->
+            <form id="signupForm" class="flex flex-col gap-2 hidden" autocomplete="on">
+                <div class="form-group">
+                    <label for="signupName">Full Name <span class="required">*</span></label>
+                    <input type="text" id="signupName" class="form-control" placeholder="Your full name" required autocomplete="name">
+                    <span class="error-msg hidden" id="signupNameErr"></span>
+                </div>
+                <div class="form-group">
+                    <label for="signupEmail">Gmail Address <span class="required">*</span></label>
+                    <input type="email" id="signupEmail" class="form-control" placeholder="you@gmail.com" required autocomplete="email">
+                    <span class="error-msg hidden" id="signupEmailErr"></span>
+                </div>
+                <div class="form-group">
+                    <label for="signupPhone">Phone Number (10 digits) <span class="required">*</span></label>
+                    <input type="tel" id="signupPhone" class="form-control" placeholder="9876543210" maxlength="10" required inputmode="numeric" autocomplete="tel">
+                    <span class="error-msg hidden" id="signupPhoneErr"></span>
+                </div>
+                <div class="form-group">
+                    <label for="signupPassword">Password <span class="required">*</span></label>
+                    <div style="position:relative">
+                        <input type="password" id="signupPassword" class="form-control" placeholder="Min 6 characters" required autocomplete="new-password" style="padding-right:2.5rem">
+                        <button type="button" onclick="togglePass('signupPassword','eyeSignup')" style="position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text-secondary);font-size:1.1rem" id="eyeSignup">👁</button>
+                    </div>
+                    <div class="progress-bar mt-1" id="passStrengthBar" style="display:none">
+                        <div class="progress-fill" id="passStrengthFill" style="width:0%"></div>
+                    </div>
+                    <span class="error-msg hidden" id="signupPassErr"></span>
+                </div>
+                <div class="form-group">
+                    <label for="signupConfirm">Confirm Password <span class="required">*</span></label>
+                    <input type="password" id="signupConfirm" class="form-control" placeholder="Re-enter password" required autocomplete="new-password">
+                    <span class="error-msg hidden" id="signupConfirmErr"></span>
+                </div>
+
+                <div style="background:var(--bg-hover);border-radius:var(--radius-sm);padding:0.875rem;border:1px solid var(--border)">
+                    <p class="text-sm font-semibold" style="margin-bottom:0.75rem;color:var(--text-secondary)">🛡️ Security Questions (for password recovery)</p>
+                    <div class="form-group">
+                        <label for="sq1">Q1: <span class="required">*</span></label>
+                        <input type="text" id="sq1" class="form-control" placeholder="e.g. What is your mother's maiden name?" required>
+                        <input type="text" id="sa1" class="form-control mt-1" placeholder="Your answer" required>
+                        <span class="error-msg hidden" id="sq1Err"></span>
+                    </div>
+                    <div class="form-group mt-1">
+                        <label for="sq2">Q2: <span class="required">*</span></label>
+                        <input type="text" id="sq2" class="form-control" placeholder="e.g. Name of your first pet?" required>
+                        <input type="text" id="sa2" class="form-control mt-1" placeholder="Your answer" required>
+                    </div>
+                    <div class="form-group mt-1">
+                        <label for="sq3">Q3: <span class="required">*</span></label>
+                        <input type="text" id="sq3" class="form-control" placeholder="e.g. Your childhood nickname?" required>
+                        <input type="text" id="sa3" class="form-control mt-1" placeholder="Your answer" required>
+                    </div>
+                </div>
+
+                <div class="error-msg hidden" id="signupGeneralErr" style="text-align:center;justify-content:center;padding:0.5rem;background:rgba(239,68,68,0.08);border-radius:6px"></div>
+                <button type="submit" class="btn btn-primary btn-lg w-full" id="signupBtn">
+                    <span id="signupBtnText">Create Account</span>
+                    <span id="signupSpinner" class="spinner spinner-sm hidden"></span>
+                </button>
+            </form>
+
+            <!-- ===== FORGOT PASSWORD FORM ===== -->
+            <form id="forgotForm" class="flex flex-col gap-2 hidden" autocomplete="off">
+                <div class="form-group">
+                    <label for="forgotEmail">Email Address <span class="required">*</span></label>
+                    <input type="email" id="forgotEmail" class="form-control" placeholder="you@gmail.com" required>
+                </div>
+                <div id="forgotStep2" class="hidden flex flex-col gap-2">
+                    <p class="text-sm" style="color:var(--text-secondary)">Answer any ONE of your security questions to reset password:</p>
+                    <div id="forgotQuestionsDisplay" class="flex flex-col gap-2"></div>
+                    <div class="form-group">
+                        <label for="forgotNewPass">New Password <span class="required">*</span></label>
+                        <input type="password" id="forgotNewPass" class="form-control" placeholder="New password (min 6 chars)" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="forgotConfirmPass">Confirm New Password <span class="required">*</span></label>
+                        <input type="password" id="forgotConfirmPass" class="form-control" placeholder="Re-enter new password" required>
+                    </div>
+                </div>
+                <div class="error-msg hidden" id="forgotErr" style="text-align:center;justify-content:center;padding:0.5rem;background:rgba(239,68,68,0.08);border-radius:6px"></div>
+                <div class="success-msg hidden" id="forgotSuccess" style="text-align:center;padding:0.5rem;background:rgba(16,185,129,0.08);border-radius:6px;color:var(--success);font-size:0.875rem"></div>
+                <button type="submit" class="btn btn-primary btn-lg w-full" id="forgotBtn">
+                    <span id="forgotBtnText">Find Account</span>
+                </button>
+            </form>
+
+            <!-- Download App Card -->
+            <div class="download-card" id="downloadCard">
+                <h3>📱 Download Mobile App</h3>
+                <p>Install the OAP Visit app on your Android phone for the best experience.</p>
+                <button class="btn btn-lg w-full" id="downloadAppBtn" onclick="handleAppDownload()" style="background:rgba(255,255,255,0.2);color:white;border:2px solid rgba(255,255,255,0.4);backdrop-filter:blur(4px)">
+                    ⬇️ Download Latest App
+                </button>
+                <p class="download-version" id="appVersionDisplay">Checking version...</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== ADMIN LOGIN MODAL ===== -->
+    <div class="modal-overlay" id="adminLoginModal">
+        <div class="modal" style="max-width:380px">
+            <div class="modal-header">
+                <h2 class="modal-title">🔐 Admin Login</h2>
+                <button class="modal-close" onclick="closeModal('adminLoginModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="adminUser">Username</label>
+                    <input type="text" id="adminUser" class="form-control" placeholder="Admin" autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="adminPass">Password</label>
+                    <input type="password" id="adminPass" class="form-control" placeholder="••••" autocomplete="current-password">
+                </div>
+                <div class="error-msg hidden" id="adminLoginErr"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('adminLoginModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="doAdminLogin()">Login as Admin</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== PWA Install Banner ===== -->
+    <div class="install-banner hidden" id="installBanner">
+        <div class="icon">🏠</div>
+        <div class="text">
+            <h4>Install OAP Visit App</h4>
+            <p>Add to your home screen for faster access.</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.375rem">
+            <button class="btn btn-primary btn-sm" id="installBtn">Install</button>
+            <button class="btn btn-secondary btn-sm" id="dismissInstall" onclick="dismissInstallBanner()">Later</button>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/pwa.js"></script>
+    <script src="js/app-download.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        // ---- Show/Hide Auth Tabs ----
+        function showTab(tab) {
+            ['login','signup','forgot'].forEach(t => {
+                document.getElementById(t+'Form').classList.toggle('hidden', t !== tab);
+                document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).classList.toggle('active', t === tab);
+            });
+        }
+
+        // ---- Toggle Password Visibility ----
+        function togglePass(fieldId, eyeId) {
+            const f = document.getElementById(fieldId);
+            const e = document.getElementById(eyeId);
+            if (f.type === 'password') { f.type = 'text'; e.textContent = '🙈'; }
+            else { f.type = 'password'; e.textContent = '👁'; }
+        }
+
+        // ---- Admin Login Modal ----
+        function showAdminLogin() {
+            document.getElementById('adminLoginModal').classList.add('active');
+            setTimeout(() => document.getElementById('adminUser').focus(), 300);
+        }
+
+        document.getElementById('adminPass').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') doAdminLogin();
+        });
+
+        // ---- Close Modal Utility ----
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+        // Close modal on overlay click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.classList.remove('active');
+            });
+        });
+
+        // ---- Password Strength ----
+        document.getElementById('signupPassword').addEventListener('input', function() {
+            const bar = document.getElementById('passStrengthBar');
+            const fill = document.getElementById('passStrengthFill');
+            const v = this.value;
+            if (!v) { bar.style.display = 'none'; return; }
+            bar.style.display = 'block';
+            let score = 0;
+            if (v.length >= 6) score++;
+            if (v.length >= 10) score++;
+            if (/[A-Z]/.test(v)) score++;
+            if (/[0-9]/.test(v)) score++;
+            if (/[^A-Za-z0-9]/.test(v)) score++;
+            const pct = (score / 5) * 100;
+            fill.style.width = pct + '%';
+            fill.style.background = score <= 2 ? '#ef4444' : score <= 3 ? '#f59e0b' : '#10b981';
+        });
+
+        // ---- Phone: digits only ----
+        document.getElementById('signupPhone').addEventListener('input', function() {
+            this.value = this.value.replace(/\D/g,'').slice(0,10);
+        });
+    </script>
+</body>
+</html>

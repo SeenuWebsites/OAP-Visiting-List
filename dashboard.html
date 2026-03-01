@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="OAP House Visiting List Dashboard">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Dashboard — OAP House Visiting List</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="icon" href="icons/icon-192.png" type="image/png">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Extra Dashboard Styles */
+        .skip-row td {
+            opacity: 0.65;
+            font-style: italic;
+        }
+
+        .done-row td:first-child {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+
+        .deleted-row {
+            background: rgba(239, 68, 68, 0.06) !important;
+        }
+
+        .deleted-row td {
+            text-decoration: line-through;
+            color: var(--text-secondary);
+        }
+
+        .undo-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            padding: 0.2rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border: none;
+            font-family: inherit;
+        }
+
+        .chance-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            background: var(--primary-light);
+            color: var(--primary);
+            padding: 0.125rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .skip-count {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            background: rgba(100, 116, 139, 0.1);
+            color: var(--text-secondary);
+            padding: 0.125rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- App Header -->
+    <header class="app-header">
+        <div class="header-brand">
+            <div class="logo">🏠</div>
+            <span class="truncate" style="max-width:160px">OAP Visiting List</span>
+        </div>
+        <div class="header-actions">
+            <span class="text-xs" style="color:var(--text-secondary)" id="headerMonthLabel">Mar 2026</span>
+            <div class="header-user" id="headerUser">
+                <div class="avatar" id="userAvatar">U</div>
+                <span class="truncate hidden md-show" id="userEmailDisplay"></span>
+            </div>
+            <button class="theme-toggle" id="themeToggle" title="Toggle Theme" aria-label="Toggle theme"></button>
+            <div style="position:relative">
+                <button class="btn btn-secondary btn-sm" id="menuBtn" onclick="toggleMenu()"
+                    aria-label="Menu">☰</button>
+                <div id="dropdownMenu" class="hidden"
+                    style="position:absolute;right:0;top:calc(100% + 0.375rem);background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);min-width:160px;z-index:200;overflow:hidden">
+                    <button class="btn-menu-item" onclick="goToAdmin()" id="adminPanelBtn" style="display:none">⚙️ Admin
+                        Panel</button>
+                    <button class="btn-menu-item" onclick="showImportExport('export')">📤 Export</button>
+                    <button class="btn-menu-item" onclick="showImportExport('import')">📥 Import</button>
+                    <button class="btn-menu-item" onclick="showMyProfile()">👤 My Profile</button>
+                    <hr style="margin:0.25rem 0;border:none;border-top:1px solid var(--border)">
+                    <button class="btn-menu-item" style="color:var(--danger)" onclick="doLogout()">🚪 Logout</button>
+                </div>
+            </div>
+        </div>
+    </header>
+    <style>
+        .btn-menu-item {
+            display: block;
+            width: 100%;
+            padding: 0.625rem 1rem;
+            background: none;
+            border: none;
+            text-align: left;
+            font-size: 0.875rem;
+            color: var(--text);
+            cursor: pointer;
+            transition: background var(--transition);
+            font-family: inherit
+        }
+
+        .btn-menu-item:hover {
+            background: var(--bg-hover)
+        }
+    </style>
+
+    <!-- Main Content -->
+    <main class="app-content animate-fade-in">
+        <!-- Commission Stats -->
+        <div class="stats-grid">
+            <div class="stat-card blue">
+                <div class="stat-label">Total Customers</div>
+                <div class="stat-value" id="statTotal">0</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-label">Completed</div>
+                <div class="stat-value" id="statCompleted">0</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-label">Pending</div>
+                <div class="stat-value" id="statPending">0</div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-label">Commission</div>
+                <div class="stat-value" id="statCommission">₹0</div>
+            </div>
+        </div>
+
+        <!-- Filters Bar -->
+        <div class="filters-bar">
+            <div class="filter-group">
+                <label>📅 Month:</label>
+                <select class="filter-select" id="filterMonth" onchange="applyFilters()">
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Year:</label>
+                <select class="filter-select" id="filterYear" onchange="applyFilters()"></select>
+            </div>
+            <div class="filter-group">
+                <label>📍 Location:</label>
+                <select class="filter-select" id="filterLocation" onchange="applyFilters()">
+                    <option value="">All Locations</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Status:</label>
+                <select class="filter-select" id="filterStatus" onchange="applyFilters()">
+                    <option value="">All</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Skipped">Skipped</option>
+                </select>
+            </div>
+            <div class="search-box" style="flex:1;min-width:140px">
+                <span class="search-icon">🔍</span>
+                <input type="search" placeholder="Search name, mobile..." id="searchInput" oninput="applyFilters()">
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="openAddCustomer()">➕ Add Customer</button>
+        </div>
+
+        <!-- Customer Table -->
+        <div class="table-wrapper">
+            <table id="customerTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Mobile</th>
+                        <th>Location</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th style="min-width:220px">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="customerTableBody">
+                    <tr>
+                        <td colspan="7">
+                            <div class="empty-state">
+                                <div class="empty-icon">⏳</div>
+                                <h3>Loading...</h3>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <!-- ============================================================
+         ADD/EDIT CUSTOMER MODAL
+    ============================================================ -->
+    <div class="modal-overlay" id="customerModal">
+        <div class="modal" style="max-width:680px">
+            <div class="modal-header">
+                <h2 class="modal-title" id="customerModalTitle">Add Customer</h2>
+                <button class="modal-close" onclick="closeModal('customerModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <form id="customerForm" autocomplete="off">
+                    <input type="hidden" id="editCustomerId">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="cName">Customer Name <span class="required">*</span></label>
+                            <input type="text" id="cName" class="form-control" placeholder="Full name" required>
+                            <span class="error-msg hidden" id="cNameErr"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="cWitness">Witness Name</label>
+                            <input type="text" id="cWitness" class="form-control" placeholder="Witness full name">
+                        </div>
+                        <div class="form-group">
+                            <label for="cMobile">Mobile <span class="required">*</span></label>
+                            <input type="tel" id="cMobile" class="form-control" placeholder="10-digit mobile"
+                                maxlength="10" inputmode="numeric" required>
+                            <span class="error-msg hidden" id="cMobileErr"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="cAltMobile">Alternate Mobile</label>
+                            <input type="tel" id="cAltMobile" class="form-control" placeholder="Alternate number"
+                                maxlength="10" inputmode="numeric">
+                        </div>
+                        <div class="form-group">
+                            <label for="cLocation">Location <span class="required">*</span></label>
+                            <input type="text" id="cLocation" class="form-control" placeholder="Enter location"
+                                required>
+                            <span class="error-msg hidden" id="cLocationErr"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="cAadhar">Aadhar (XXXX-XXXX-XXXX)</label>
+                            <input type="text" id="cAadhar" class="form-control" placeholder="XXXX-XXXX-XXXX"
+                                maxlength="14" inputmode="numeric">
+                            <span class="error-msg hidden" id="cAadharErr"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="cCIF">CIF Number</label>
+                            <input type="text" id="cCIF" class="form-control" placeholder="CIF number">
+                        </div>
+                        <div class="form-group">
+                            <label for="cAccount">Account Number</label>
+                            <input type="text" id="cAccount" class="form-control" placeholder="Account number"
+                                inputmode="numeric">
+                        </div>
+                        <div class="form-group">
+                            <label for="cFingers">Working Fingers</label>
+                            <select id="cFingers" class="form-control">
+                                <option value="">Select...</option>
+                                <option value="Right Thumb">Right Thumb</option>
+                                <option value="Left Thumb">Left Thumb</option>
+                                <option value="Both Thumbs">Both Thumbs</option>
+                                <option value="Right Index">Right Index</option>
+                                <option value="Left Index">Left Index</option>
+                                <option value="All Fingers">All Fingers</option>
+                                <option value="None">None</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="cOapType">OAP Type <span class="required">*</span></label>
+                            <select id="cOapType" class="form-control" onchange="toggleOapOther()" required>
+                                <option value="OAP">OAP</option>
+                                <option value="DAP">DAP</option>
+                                <option value="KMUT">KMUT</option>
+                                <option value="Others">Others</option>
+                            </select>
+                        </div>
+                        <div class="form-group hidden" id="oapOtherGroup">
+                            <label for="cOapOther">Specify Type <span class="required">*</span></label>
+                            <input type="text" id="cOapOther" class="form-control" placeholder="Enter type">
+                        </div>
+                        <div class="form-group">
+                            <label for="cAmount">Amount (₹) <span class="required">*</span></label>
+                            <input type="number" id="cAmount" class="form-control" placeholder="0.00" step="0.01"
+                                min="0" inputmode="decimal" required>
+                            <span class="error-msg hidden" id="cAmountErr"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="cCommission">Commission (₹)</label>
+                            <input type="number" id="cCommission" class="form-control" placeholder="0.00" step="0.01"
+                                min="0" inputmode="decimal">
+                        </div>
+                    </div>
+
+                    <!-- Image Upload Section -->
+                    <div style="margin-top:1rem">
+                        <label class="font-semibold text-sm" style="margin-bottom:0.5rem;display:block">📸 Document
+                            Images</label>
+                        <div class="image-upload-grid">
+                            <div class="image-upload-box" id="uploadBoxOAPFront">
+                                <input type="file" id="imgOAPFront" accept="image/*"
+                                    onchange="handleImageSelect(this,'previewOAPFront','uploadBoxOAPFront')">
+                                <img id="previewOAPFront" class="preview hidden">
+                                <div class="upload-icon">📷</div>
+                                <div class="upload-label">OAP Card Front</div>
+                            </div>
+                            <div class="image-upload-box" id="uploadBoxOAPBack">
+                                <input type="file" id="imgOAPBack" accept="image/*"
+                                    onchange="handleImageSelect(this,'previewOAPBack','uploadBoxOAPBack')">
+                                <img id="previewOAPBack" class="preview hidden">
+                                <div class="upload-icon">📷</div>
+                                <div class="upload-label">OAP Card Back</div>
+                            </div>
+                            <div class="image-upload-box" id="uploadBoxAaFront">
+                                <input type="file" id="imgAaFront" accept="image/*"
+                                    onchange="handleImageSelect(this,'previewAaFront','uploadBoxAaFront')">
+                                <img id="previewAaFront" class="preview hidden">
+                                <div class="upload-icon">🪪</div>
+                                <div class="upload-label">Aadhar Front</div>
+                            </div>
+                            <div class="image-upload-box" id="uploadBoxAaBack">
+                                <input type="file" id="imgAaBack" accept="image/*"
+                                    onchange="handleImageSelect(this,'previewAaBack','uploadBoxAaBack')">
+                                <img id="previewAaBack" class="preview hidden">
+                                <div class="upload-icon">🪪</div>
+                                <div class="upload-label">Aadhar Back</div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-secondary mt-1">Supported: JPG, PNG, WEBP. Max 5MB each.</p>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('customerModal')">Cancel</button>
+                <button class="btn btn-primary" id="saveCustomerBtn" onclick="saveCustomer()">
+                    <span id="saveCustomerBtnText">Save Customer</span>
+                    <span id="saveCustomerSpinner" class="spinner spinner-sm hidden"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         CUSTOMER DETAILS MODAL
+    ============================================================ -->
+    <div class="modal-overlay" id="detailsModal">
+        <div class="modal" style="max-width:640px">
+            <div class="modal-header">
+                <h2 class="modal-title">👤 Customer Details</h2>
+                <button class="modal-close" onclick="closeModal('detailsModal')">✕</button>
+            </div>
+            <div class="modal-body" id="detailsContent">Loading...</div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('detailsModal')">Close</button>
+                <button class="btn btn-outline-primary" id="editFromDetails" onclick="">✏️ Edit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         DONE POPUP (Chance Multiplier)
+    ============================================================ -->
+    <div class="modal-overlay" id="doneModal">
+        <div class="modal" style="max-width:380px">
+            <div class="modal-header">
+                <h2 class="modal-title">✅ Mark as Done</h2>
+                <button class="modal-close" onclick="closeModal('doneModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="doneCustomerId">
+                <div style="background:var(--bg-hover);border-radius:var(--radius-sm);padding:1rem;margin-bottom:1rem">
+                    <p class="text-sm font-semibold" id="doneCustomerName">Customer Name</p>
+                    <p class="text-xs text-secondary" id="doneSkipInfo">Skip count: 0 months</p>
+                </div>
+                <div class="form-group">
+                    <label for="chanceMultiplier">Chance Multiplier <span class="required">*</span></label>
+                    <input type="number" id="chanceMultiplier" class="form-control" value="1" min="1" max="99"
+                        inputmode="numeric">
+                    <p class="text-xs text-secondary mt-1">Final Chance = Multiplier + Skip Months</p>
+                </div>
+                <div
+                    style="background:var(--primary-light);border-radius:var(--radius-sm);padding:0.75rem;display:flex;justify-content:space-between;align-items:center">
+                    <span class="text-sm font-semibold">Final Chance:</span>
+                    <span class="stat-value" id="finalChanceDisplay"
+                        style="font-size:1.5rem;color:var(--primary)">1</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('doneModal')">Cancel</button>
+                <button class="btn btn-success" onclick="confirmDone()">✅ Confirm Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         IMPORT/EXPORT MODAL
+    ============================================================ -->
+    <div class="modal-overlay" id="importExportModal">
+        <div class="modal" style="max-width:480px">
+            <div class="modal-header">
+                <h2 class="modal-title" id="importExportTitle">Export Data</h2>
+                <button class="modal-close" onclick="closeModal('importExportModal')">✕</button>
+            </div>
+            <div class="modal-body" id="importExportBody">
+                <!-- Dynamically filled -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         IMAGE FULLSCREEN VIEW
+    ============================================================ -->
+    <div id="imgOverlay"
+        style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:9999;display:none;align-items:center;justify-content:center"
+        onclick="this.style.display='none'">
+        <img id="imgOverlayImg" style="max-width:90%;max-height:90vh;border-radius:8px;object-fit:contain">
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="modal-overlay" id="profileModal">
+        <div class="modal" style="max-width:420px">
+            <div class="modal-header">
+                <h2 class="modal-title">👤 My Profile</h2>
+                <button class="modal-close" onclick="closeModal('profileModal')">✕</button>
+            </div>
+            <div class="modal-body" id="profileContent">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay hidden" id="loadingOverlay">
+        <div style="text-align:center">
+            <div class="spinner" style="margin:0 auto 1rem"></div>
+            <p style="color:white;font-size:0.9rem" id="loadingMsg">Loading...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+    <!-- SheetJS for Excel export/import -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="js/supabase-client.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/pwa.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/monthly.js"></script>
+    <script src="js/images.js"></script>
+    <script src="js/import-export.js"></script>
+    <script src="js/customers.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        // ---- Utility: close modals ----
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+        document.querySelectorAll('.modal-overlay').forEach(o => {
+            o.addEventListener('click', e => { if (e.target === o) o.classList.remove('active'); });
+        });
+
+        // ---- Dropdown Menu ----
+        function toggleMenu() {
+            const m = document.getElementById('dropdownMenu');
+            m.classList.toggle('hidden');
+        }
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('dropdownMenu');
+            const btn = document.getElementById('menuBtn');
+            if (!menu.contains(e.target) && e.target !== btn) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // ---- OAP Type Toggle ----
+        function toggleOapOther() {
+            const v = document.getElementById('cOapType').value;
+            document.getElementById('oapOtherGroup').classList.toggle('hidden', v !== 'Others');
+            if (v !== 'Others') document.getElementById('cOapOther').removeAttribute('required');
+            else document.getElementById('cOapOther').setAttribute('required', 'required');
+        }
+
+        // ---- Aadhar Format ----
+        document.addEventListener('DOMContentLoaded', () => {
+            const aadhar = document.getElementById('cAadhar');
+            if (aadhar) {
+                aadhar.addEventListener('input', function () {
+                    let v = this.value.replace(/\D/g, '').slice(0, 12);
+                    this.value = v.replace(/(\d{4})(?=\d)/g, '$1-');
+                });
+            }
+            const mob = document.getElementById('cMobile');
+            if (mob) mob.addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 10); });
+            const alt = document.getElementById('cAltMobile');
+            if (alt) alt.addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 10); });
+
+            // Done popup: live update final chance
+            document.getElementById('chanceMultiplier').addEventListener('input', updateFinalChance);
+        });
+
+        // ---- Image Preview ----
+        function handleImageSelect(input, previewId, boxId) {
+            const file = input.files[0];
+            if (!file) return;
+            if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
+                showToast('Invalid file type. Use JPG, PNG, WEBP.', 'error');
+                return;
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                showToast('File too large. Max 5MB.', 'error');
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.getElementById(previewId);
+                img.src = e.target.result;
+                img.classList.remove('hidden');
+                const box = document.getElementById(boxId);
+                box.querySelector('.upload-icon').style.display = 'none';
+                box.querySelector('.upload-label').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // ---- Image fullscreen ----
+        function openImageFullscreen(src) {
+            const ov = document.getElementById('imgOverlay');
+            document.getElementById('imgOverlayImg').src = src;
+            ov.style.display = 'flex';
+        }
+
+        // ---- Navigate to Admin ----
+        function goToAdmin() {
+            window.location.href = 'admin.html';
+        }
+
+        // ---- Logout ----
+        async function doLogout() {
+            if (confirm('Are you sure you want to logout?')) {
+                await logUserAction('logout');
+                await supabase.auth.signOut();
+                window.location.href = 'index.html';
+            }
+        }
+
+        // ---- Profile ----
+        async function showMyProfile() {
+            toggleMenu();
+            const modal = document.getElementById('profileModal');
+            modal.classList.add('active');
+            const user = (await supabase.auth.getUser()).data.user;
+            if (!user) return;
+            const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+            document.getElementById('profileContent').innerHTML = `
+                <div class="flex flex-col gap-2">
+                    <div class="detail-row"><div class="detail-label">Email</div><div class="detail-value">${user.email}</div></div>
+                    <div class="detail-row"><div class="detail-label">Name</div><div class="detail-value">${profile?.full_name || '-'}</div></div>
+                    <div class="detail-row"><div class="detail-label">Phone</div><div class="detail-value">${profile?.phone || '-'}</div></div>
+                    <div class="detail-row"><div class="detail-label">Role</div><div class="detail-value"><span class="badge ${profile?.role === 'admin' ? 'badge-completed' : 'badge-pending'}">${profile?.role || 'user'}</span></div></div>
+                    <div class="detail-row"><div class="detail-label">Joined</div><div class="detail-value">${new Date(user.created_at).toLocaleString('en-IN')}</div></div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+
+</html>
