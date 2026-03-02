@@ -424,8 +424,8 @@ function validateImportRows(rows) {
             errors.push(`Row ${i + 1}: Name is missing`);
             hasErrors = true;
         }
-        if (!r.mobile || !/^\d{10}$/.test(String(r.mobile).replace(/\D/g, ''))) {
-            errors.push(`Row ${i + 1}: Mobile "${r.mobile}" is not a valid 10-digit number`);
+        if (!r.mobile || !/^[6-9]\d{9}$/.test(String(r.mobile).replace(/\D/g, ''))) {
+            errors.push(`Row ${i + 1}: Mobile "${r.mobile}" is not a valid 10-digit Indian number`);
             hasErrors = true;
         }
         if (r.aadhar && !/^\d{4}-?\d{4}-?\d{4}$/.test(r.aadhar)) {

@@ -249,6 +249,7 @@
                             <label for="cAltMobile">Alternate Mobile</label>
                             <input type="tel" id="cAltMobile" class="form-control" placeholder="Alternate number"
                                 maxlength="10" inputmode="numeric">
+                            <span class="error-msg hidden" id="cAltMobileErr"></span>
                         </div>
                         <div class="form-group">
                             <label for="cLocation">Location <span class="required">*</span></label>
@@ -265,11 +266,13 @@
                         <div class="form-group">
                             <label for="cCIF">CIF Number</label>
                             <input type="text" id="cCIF" class="form-control" placeholder="CIF number">
+                            <span class="error-msg hidden" id="cCIFErr"></span>
                         </div>
                         <div class="form-group">
                             <label for="cAccount">Account Number</label>
                             <input type="text" id="cAccount" class="form-control" placeholder="Account number"
                                 inputmode="numeric">
+                            <span class="error-msg hidden" id="cAccountErr"></span>
                         </div>
                         <div class="form-group">
                             <label for="cFingers">Working Fingers</label>
@@ -307,6 +310,7 @@
                             <label for="cCommission">Commission (₹)</label>
                             <input type="number" id="cCommission" class="form-control" placeholder="0.00" step="0.01"
                                 min="0" inputmode="decimal">
+                            <span class="error-msg hidden" id="cCommissionErr"></span>
                         </div>
                     </div>
 

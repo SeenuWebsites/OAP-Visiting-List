@@ -354,6 +354,7 @@ async function uploadNewVersion() {
     const btnText = document.getElementById('uploadVersionBtnText');
 
     if (!versionNum) { showToast('Version number is required.', 'warning'); return; }
+    if (!file) { showToast('Please select an APK or ZIP file.', 'warning'); return; }
 
     btn.disabled = true;
     spinner.classList.remove('hidden');

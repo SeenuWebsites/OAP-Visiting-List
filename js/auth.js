@@ -7,8 +7,8 @@
 // The hardcoded check is: Username=Admin, Password=5566
 // We map this to the admin Supabase account
 const ADMIN_USERNAME = 'Admin';
-const ADMIN_PASSWORD = '5566';
-// Admin's Supabase email (you create this in Supabase Auth after setup)
+const ADMIN_PASSWORD = 'Admin@123'; // Passwords must be 6+ characters for Supabase
+// Admin's Supabase email
 const ADMIN_EMAIL = 'admin@oap-visit.local';
 
 // ---- LOGIN ----
@@ -88,17 +88,12 @@ async function doLogin() {
         });
 
         if (error) {
-            showError(errEl, 'Invalid email or password. Please try again.');
+            showError(errEl, error.message || 'Invalid email or password. Please try again.');
             return;
         }
 
-        // Update session persistence
-        if (!keepLogged) {
-            // Set short expiry by signing out on tab close
-            window.addEventListener('beforeunload', async () => {
-                await supabase.auth.signOut();
-            });
-        }
+        // Session persistence is handled by Supabase client (persistSession: true)
+        // No need to manually sign out on page unload as it breaks redirects
 
         // Log login action
         await logUserAction('login', { email: data.user.email });
@@ -139,7 +134,7 @@ async function doAdminLogin() {
     });
 
     if (error) {
-        errEl.innerHTML = `❌ Admin account not set up yet.<br><small>Please create admin user in Supabase Auth first. See README.</small>`;
+        errEl.innerHTML = `❌ Admin account login failed: ${error.message}<br><small>Ensure email ${ADMIN_EMAIL} exists in Supabase Auth with password ${ADMIN_PASSWORD}.</small>`;
         errEl.classList.remove('hidden');
         return;
     }
@@ -166,17 +161,34 @@ async function doSignup() {
     const spinner = document.getElementById('signupSpinner');
     const btnText = document.getElementById('signupBtnText');
     const errEl = document.getElementById('signupGeneralErr');
+    // Clear errors
     errEl.classList.add('hidden');
+    clearFieldError('signupName', 'signupNameErr');
+    clearFieldError('signupEmail', 'signupEmailErr');
+    clearFieldError('signupPhone', 'signupPhoneErr');
+    clearFieldError('signupPassword', 'signupPassErr');
+    clearFieldError('signupConfirm', 'signupConfirmErr');
+    clearFieldError('sq1', 'sq1Err');
+    clearFieldError('sq2', 'sq2Err');
+    clearFieldError('sq3', 'sq3Err');
 
     // Validations
     let valid = true;
     if (!name) { setFieldError('signupName', 'signupNameErr', 'Name is required'); valid = false; }
     if (!validateEmail(email)) { setFieldError('signupEmail', 'signupEmailErr', 'Enter a valid Gmail address'); valid = false; }
-    if (!/^[6-9]\d{9}$/.test(phone)) { setFieldError('signupPhone', 'signupPhoneErr', 'Enter a valid 10-digit Indian mobile number'); valid = false; }
+
+    // Validate phone (digits only)
+    const cleanedPhone = phone.replace(/\D/g, '');
+    if (!/^[6-9]\d{9}$/.test(cleanedPhone)) {
+        setFieldError('signupPhone', 'signupPhoneErr', 'Enter a valid 10-digit Indian mobile number');
+        valid = false;
+    }
+
     if (password.length < 6) { setFieldError('signupPassword', 'signupPassErr', 'Password must be at least 6 characters'); valid = false; }
-    if (password !== confirm) { setFieldError('signupConfirm', 'signupConfirmErr', 'Passwords do not match'); valid = false; }
-    if (!sq1 || !sa1) { setFieldError('sq1', 'sq1Err', 'Please fill in security question 1 and its answer'); valid = false; }
-    if (!sq2 || !sa2 || !sq3 || !sa3) { showError(errEl, 'Please fill in all 3 security questions and answers'); valid = false; }
+    if (password.trim() !== confirm.trim()) { setFieldError('signupConfirm', 'signupConfirmErr', 'Passwords do not match'); valid = false; }
+    if (!sq1 || !sa1) { setFieldError('sq1', 'sq1Err', 'Fill in security question 1 and its answer'); valid = false; }
+    if (!sq2 || !sa2) { setFieldError('sq2', 'sq2Err', 'Fill in security question 2 and its answer'); valid = false; }
+    if (!sq3 || !sa3) { setFieldError('sq3', 'sq3Err', 'Fill in security question 3 and its answer'); valid = false; }
     if (!valid) return;
 
     btn.disabled = true;

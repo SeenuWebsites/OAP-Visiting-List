@@ -55,7 +55,8 @@ function validateCustomerForm() {
         { field: 'cName', err: 'cNameErr', test: v => v.trim().length >= 2, msg: 'Name must be at least 2 characters' },
         { field: 'cMobile', err: 'cMobileErr', test: v => /^[6-9]\d{9}$/.test(v), msg: 'Enter a valid 10-digit mobile number' },
         { field: 'cLocation', err: 'cLocationErr', test: v => v.trim().length >= 2, msg: 'Location is required' },
-        { field: 'cAmount', err: 'cAmountErr', test: v => !v || parseFloat(v) >= 0, msg: 'Enter a valid amount' },
+        { field: 'cAmount', err: 'cAmountErr', test: v => v && parseFloat(v) >= 0, msg: 'Enter a valid amount' },
+        { field: 'cCommission', err: 'cCommissionErr', test: v => !v || parseFloat(v) >= 0, msg: 'Enter a valid commission' },
     ];
     errors.forEach(({ field, err, test, msg }) => {
         const el = document.getElementById(field);
@@ -67,6 +68,15 @@ function validateCustomerForm() {
             clearFieldError(field, err);
         }
     });
+
+    // Alternate Mobile
+    const altMob = (document.getElementById('cAltMobile')?.value || '').trim();
+    if (altMob && !/^[6-9]\d{9}$/.test(altMob)) {
+        setFieldError('cAltMobile', 'cAltMobileErr', 'Enter a valid 10-digit mobile number');
+        valid = false;
+    } else {
+        clearFieldError('cAltMobile', 'cAltMobileErr');
+    }
 
     // Aadhar format
     const aadhar = document.getElementById('cAadhar').value;
